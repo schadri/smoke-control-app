@@ -82,7 +82,7 @@ export default function Dashboard() {
       <header className="flex justify-between items-center p-6 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent">
-            Control C.
+            Controla los Puchos.
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Progreso Diario: {logsToday}/{config?.meta_diaria || 10}</p>
         </div>

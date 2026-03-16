@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Control C.",
+    title: "Controla los Puchos.",
   },
 };
 

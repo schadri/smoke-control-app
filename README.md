@@ -1,4 +1,4 @@
-# Controlador de Cigarrillos (PWA) 🚬 ➔ 🚭
+# Controla los Puchos 🚬 (PWA) ➔ 🚭
 
 Una Aplicación Web Progresiva (PWA) construida con **Next.js**, **Supabase** y **Tailwind CSS**, diseñada para ayudar a los usuarios a reducir progresiva y ordenadamente su consumo de tabaco mediante la distribución inteligente de intervalos de tiempo.
 
