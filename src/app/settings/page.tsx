@@ -7,8 +7,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-  const { config, setConfig } = useAppStore();
+  const { config, updateConfig, user } = useAppStore();
   const router = useRouter();
+
+  // Redirect to login if unauthenticated
+  if (!user && typeof window !== 'undefined') {
+    router.push('/login');
+  }
 
   // Local state for the form, initialized from global state or defaults
   const [formData, setFormData] = useState({
@@ -25,15 +30,13 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     
-    // In actual implementation: update Supabase profile
-    console.log('Guardando configuración...', formData);
-    setConfig(formData);
-    
-    // Simulate network latency
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      await updateConfig(formData);
       router.push('/');
-    }, 800);
+    } catch (error) {
+      console.error('Error updating config', error);
+      setSaving(false);
+    }
   };
 
   return (

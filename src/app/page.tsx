@@ -9,37 +9,37 @@ import { addMinutes, isBefore } from 'date-fns';
 import { calcularIntervaloRestante, calcularIntervaloInicial, timeStringToDate } from '@/lib/utils/time';
 import { Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
-
-// Mock data to simulate an active session for the build/preview
-// In the integration phase, this will be fetched from Supabase
-const dummyConfig = {
-  meta_diaria: 10,
-  hora_inicio: '08:00',
-  hora_fin: '22:00',
-  modo_reduccion_activa: true,
-  precio_paquete: 5.00
-};
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
-  const { config, logsToday, lastLogAt, setConfig, addLog, hydrateSession } = useAppStore();
+  const { user, config, logs, isLoading, fetchInitialData, addLog, signOut } = useAppStore();
   const [nextCigaretteTime, setNextCigaretteTime] = useState<Date | null>(null);
+  const router = useRouter();
 
+  // On mount, fetch data.
   useEffect(() => {
-    // Simulate auth hydration 
-    if (!config) {
-      hydrateSession(
-        { id: '1', email: 'user@example.com' },
-        dummyConfig,
-        2, // Simulate 2 cigarettes smoked today
-        new Date(Date.now() - 1000 * 60 * 60) // 1 hour ago
-      );
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  // Handle protected route redirect
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
     }
-  }, [config, hydrateSession]);
+  }, [isLoading, user, router]);
+
+  const lastLogAt = logs.length > 0 ? new Date(logs[logs.length - 1].created_at) : null;
+  const logsToday = logs.length;
+  const isGoalReached = config ? logsToday >= config.meta_diaria : false;
 
   useEffect(() => {
     if (!config) return;
 
-    // Calculate next allowed time based on last log + current dynamic interval
+    if (isGoalReached) {
+      setNextCigaretteTime(null);
+      return;
+    }
+
     let interval = calcularIntervaloInicial(config);
     let referenceTime = new Date();
 
@@ -47,7 +47,6 @@ export default function Dashboard() {
       interval = calcularIntervaloRestante(lastLogAt, logsToday, config);
       referenceTime = lastLogAt;
     } else {
-      // If no logs today, the next is at start time
       const startTime = timeStringToDate(config.hora_inicio);
       setNextCigaretteTime(startTime);
       return;
@@ -55,23 +54,28 @@ export default function Dashboard() {
 
     const nextTime = addMinutes(referenceTime, interval);
     setNextCigaretteTime(nextTime);
-  }, [config, logsToday, lastLogAt]);
+  }, [config, logsToday, lastLogAt, isGoalReached]);
 
-  const canSmokeNow = nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
+  const canSmokeNow = !isGoalReached && nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
 
   const handleRecord = async (esEmergencia: boolean) => {
-    // In actual implementation: await supabase.from('logs').insert(...)
-    console.log('Registrando consumo...', { esEmergencia });
-    addLog(esEmergencia);
+    if (!config) return;
+    const intervalToSave = lastLogAt ? calcularIntervaloRestante(lastLogAt, logsToday, config) : calcularIntervaloInicial(config);
+    await addLog(esEmergencia, intervalToSave);
   };
 
-  // Mock logs for the chart
-  const mockLogs = [
-    { id: '1', created_at: new Date(new Date().setHours(10)).toISOString(), es_emergencia: true },
-    { id: '2', created_at: new Date(new Date().setHours(14)).toISOString(), es_emergencia: true },
-    { id: '3', created_at: new Date(new Date().setHours(14)).toISOString(), es_emergencia: true },
-    { id: '4', created_at: new Date(new Date().setHours(19)).toISOString(), es_emergencia: true },
-  ];
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  if (isLoading || !user) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
+        <span className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen pb-24 max-w-lg mx-auto w-full relative">
@@ -86,32 +90,31 @@ export default function Dashboard() {
           <Link href="/settings" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">
             <Settings className="w-5 h-5" />
           </Link>
-          <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">
+          <button onClick={handleSignOut} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
       </header>
 
       <div className="p-4 space-y-8 mt-4">
-        {/* Timer Hero Section */}
         <section>
           <TimerDisplay 
             nextCigaretteTime={nextCigaretteTime} 
             canSmokeNow={canSmokeNow} 
+            isGoalReached={isGoalReached}
           />
         </section>
 
-        {/* Action Buttons */}
         <section>
           <ActionButtons 
             canSmokeNow={canSmokeNow} 
             onRecord={handleRecord} 
+            isGoalReached={isGoalReached}
           />
         </section>
 
-        {/* Analytics Section */}
         <section className="pt-4">
-          <AnalyticsChart logs={mockLogs} />
+          <AnalyticsChart logs={logs} />
         </section>
       </div>
 

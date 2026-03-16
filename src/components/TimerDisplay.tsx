@@ -7,13 +7,14 @@ import { Clock } from 'lucide-react';
 interface Props {
   nextCigaretteTime: Date | null;
   canSmokeNow: boolean;
+  isGoalReached: boolean;
 }
 
-export function TimerDisplay({ nextCigaretteTime, canSmokeNow }: Props) {
+export function TimerDisplay({ nextCigaretteTime, canSmokeNow, isGoalReached }: Props) {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
 
   useEffect(() => {
-    if (!nextCigaretteTime || canSmokeNow) {
+    if (!nextCigaretteTime || canSmokeNow || isGoalReached) {
       setTimeLeft(null);
       return;
     }
@@ -36,7 +37,23 @@ export function TimerDisplay({ nextCigaretteTime, canSmokeNow }: Props) {
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [nextCigaretteTime, canSmokeNow]);
+  }, [nextCigaretteTime, canSmokeNow, isGoalReached]);
+
+  if (isGoalReached) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-sky-50 dark:bg-sky-950/30 rounded-3xl border border-sky-100 dark:border-sky-900/50">
+        <div className="bg-sky-100 dark:bg-sky-900/50 p-4 rounded-full mb-4">
+          <span className="text-3xl">🏆</span>
+        </div>
+        <h2 className="text-2xl font-bold text-sky-700 dark:text-sky-400 text-center">
+          ¡Meta Alcanzada!
+        </h2>
+        <p className="text-sky-600/80 dark:text-sky-400/80 text-center mt-2 font-medium">
+          Has cumplido con tu objetivo de hoy. Mañana será un nuevo reto.
+        </p>
+      </div>
+    );
+  }
 
   if (canSmokeNow || !nextCigaretteTime) {
     return (
