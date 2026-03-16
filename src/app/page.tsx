@@ -28,8 +28,8 @@ export default function Dashboard() {
     }
   }, [isLoading, user, router]);
 
-  const lastLogAt = logs.length > 0 ? new Date(logs[logs.length - 1].created_at) : null;
   const logsToday = logs.length;
+  const lastLogTimestamp = logs.length > 0 ? logs[logs.length - 1].created_at : null;
   const isGoalReached = config ? logsToday >= config.meta_diaria : false;
 
   useEffect(() => {
@@ -40,6 +40,7 @@ export default function Dashboard() {
       return;
     }
 
+    const lastLogAt = lastLogTimestamp ? new Date(lastLogTimestamp) : null;
     let interval = calcularIntervaloInicial(config);
     let referenceTime = new Date();
 
@@ -54,12 +55,13 @@ export default function Dashboard() {
 
     const nextTime = addMinutes(referenceTime, interval);
     setNextCigaretteTime(nextTime);
-  }, [config, logsToday, lastLogAt, isGoalReached]);
+  }, [config, logsToday, lastLogTimestamp, isGoalReached]);
 
   const canSmokeNow = !isGoalReached && nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
 
   const handleRecord = async (esEmergencia: boolean) => {
     if (!config) return;
+    const lastLogAt = lastLogTimestamp ? new Date(lastLogTimestamp) : null;
     const intervalToSave = lastLogAt ? calcularIntervaloRestante(lastLogAt, logsToday, config) : calcularIntervaloInicial(config);
     await addLog(esEmergencia, intervalToSave);
   };

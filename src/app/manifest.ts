@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Controlador de Cigarrillos',
+    name: 'Controla los Puchos',
     short_name: 'Controla los Puchos.',
     description: 'Gestión y reducción progresiva del consumo de tabaco',
     start_url: '/',

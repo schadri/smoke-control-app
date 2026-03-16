@@ -38,7 +38,7 @@ export function AnalyticsChart({ logs }: Props) {
         <span>Patrón de Ansiedad (Emergencias)</span>
         <span className="text-xs font-normal bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-2 py-1 rounded-md">Últimos 7 días</span>
       </h3>
-      <div className="flex-1 min-h-[150px] w-full">
+      <div className="flex-1 h-[150px] min-h-[150px] w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={emergenciesByHour}
