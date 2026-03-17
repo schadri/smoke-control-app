@@ -53,12 +53,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         .from('profiles')
         .select('config')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       
-      const config = profileData?.config as UserConfig | null;
-      if (config) {
-        set({ config });
-      }
+      const config = (profileData?.config as UserConfig | null) || {
+        meta_diaria: 10,
+        hora_inicio: '08:00',
+        hora_fin: '22:00',
+        modo_reduccion_activa: true,
+        precio_paquete: 5.00,
+        notificaciones_activas: false
+      };
+      set({ config });
 
       // Fetch Logs for the last 48 hours to cover window crossings
       const fortyEightHoursAgo = addMinutes(new Date(), -48 * 60).toISOString();
