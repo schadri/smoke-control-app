@@ -61,9 +61,15 @@ export function calcularIntervaloRestante(horaActual: Date, logsDelDia: number, 
   if (cigarrosRestantes === 1) return differenceInMinutes(fin, horaActual); // El último se fuma a la hora de fin idealmente
 
   const minutosRestantes = differenceInMinutes(fin, horaActual);
+  const intervaloCalculado = Math.floor(Math.max(0, minutosRestantes) / cigarrosRestantes);
+
+  // Si ya pasó la hora de fin (intervalo 0) pero aún quedan cigarrillos para llegar a la meta,
+  // devolvemos el intervalo inicial como fallback para mantener una estructura mínima.
+  if (intervaloCalculado <= 0 && cigarrosRestantes > 0) {
+    return calcularIntervaloInicial(config);
+  }
   
-  // Distribuir el tiempo restante equitativamente
-  return Math.floor(Math.max(0, minutosRestantes) / cigarrosRestantes);
+  return intervaloCalculado;
 }
 
 /**
