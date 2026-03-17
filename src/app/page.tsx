@@ -5,7 +5,7 @@ import { TimerDisplay } from '@/components/TimerDisplay';
 import { ActionButtons } from '@/components/ActionButtons';
 import { AnalyticsChart } from '@/components/AnalyticsChart';
 import { useAppStore } from '@/store/useStore';
-import { addMinutes, isBefore } from 'date-fns';
+import { addMinutes, isBefore, isAfter } from 'date-fns';
 import { calcularIntervaloRestante, calcularIntervaloInicial, timeStringToDate } from '@/lib/utils/time';
 import { Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
@@ -50,13 +50,23 @@ export default function Dashboard() {
       referenceTime = lastLogAt;
     } else {
       const startTime = timeStringToDate(config.hora_inicio);
-      setNextCigaretteTime(startTime);
+      const endTime = timeStringToDate(config.hora_fin);
+      const now = new Date();
+
+      // Si ya pasó la hora de fin y no hay logs (ej. tras un reinicio nocturno),
+      // bloquear hasta mañana a la hora de inicio.
+      if (isAfter(now, endTime)) {
+        const nextStart = addMinutes(startTime, 24 * 60);
+        setNextCigaretteTime(nextStart);
+      } else {
+        setNextCigaretteTime(startTime);
+      }
       return;
     }
 
     const nextTime = addMinutes(referenceTime, interval);
     setNextCigaretteTime(nextTime);
-  }, [config, logsToday, lastLogTimestamp, isGoalReached]);
+  }, [config, logsToday, lastLogTimestamp, isGoalReached, refreshTrigger]);
 
   // Force re-render when timer hits zero
   useEffect(() => {
