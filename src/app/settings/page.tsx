@@ -218,13 +218,21 @@ export default function SettingsPage() {
                       throw new Error('No se encontró ningún Service Worker registrado.');
                     }
                     
+                    // Esperar activacion si es necesario
+                    if (!registration.active) {
+                      alert('El Service Worker se está activando... espera un momento.');
+                      let retry = 0;
+                      while (!registration.active && retry < 10) {
+                        await new Promise(r => setTimeout(r, 500));
+                        retry++;
+                      }
+                    }
+
                     const swStatus = registration.active ? 'Activo' : (registration.installing ? 'Instalando' : 'Esperando');
                     alert(`Paso 3: SW Detectado. Estado: ${swStatus}`);
                     
-                    // Forzar activación si está esperando
-                    if (registration.waiting) {
-                      alert('Service Worker en espera. Intentando activar...');
-                      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    if (!registration.active) {
+                      throw new Error('El Service Worker no se activó a tiempo.');
                     }
 
                     const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -235,10 +243,10 @@ export default function SettingsPage() {
                     alert('Paso 4: Intentando suscripción con la red de notificaciones...');
                     const subscription = await registration.pushManager.subscribe({
                       userVisibleOnly: true,
-                      applicationServerKey: urlBase64ToUint8Array(applicationServerKey)
+                      applicationServerKey: urlBase64ToUint8Array(applicationServerKey.trim())
                     }).catch(err => {
-                      console.error('Error en pushManager.subscribe:', err);
-                      throw new Error(`Error en PushManager: ${err.message}`);
+                      alert(`Error exacto de PushManager:\nNombre: ${err.name}\nMsg: ${err.message}`);
+                      throw err;
                     });
 
                     alert('Paso 5: Suscripción obtenida del navegador. Enviando al servidor...');
