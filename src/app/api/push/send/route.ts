@@ -22,8 +22,13 @@ export async function POST(req: Request) {
     .select('*')
     .eq('user_id', user.id);
 
-  if (fetchError || !subscriptions) {
-    return NextResponse.json({ error: 'Subscriptions not found' }, { status: 404 });
+  if (fetchError) {
+    console.error('Error fetching subscriptions:', fetchError);
+    return NextResponse.json({ error: 'Database error fetching subscriptions' }, { status: 500 });
+  }
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return NextResponse.json({ error: 'No subscriptions found for this user' }, { status: 404 });
   }
 
   const results = await Promise.allSettled(

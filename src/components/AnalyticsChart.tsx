@@ -40,9 +40,9 @@ export function AnalyticsChart({ logs }: Props) {
         <span className="text-xs font-normal bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-2 py-1 rounded-md">Últimos 7 días</span>
       </h3>
       
-      <div className="w-full h-[200px] min-w-0 overflow-hidden relative" style={{ minHeight: '200px' }}>
+      <div className="w-full aspect-[4/3] min-h-[200px] max-h-[250px] min-w-0 overflow-hidden relative">
         {hasMounted && (
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={emergenciesByHour}
               margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
