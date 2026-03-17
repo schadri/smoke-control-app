@@ -63,10 +63,11 @@ export function calcularIntervaloRestante(horaActual: Date, logsDelDia: number, 
   const minutosRestantes = differenceInMinutes(fin, horaActual);
   const intervaloCalculado = Math.floor(Math.max(0, minutosRestantes) / cigarrosRestantes);
 
-  // Si ya pasó la hora de fin (intervalo 0) pero aún quedan cigarrillos para llegar a la meta,
-  // devolvemos el intervalo inicial como fallback para mantener una estructura mínima.
+  // Si ya pasó la hora de fin (intervalo <= 0) pero aún quedan cigarrillos,
+  // bloqueamos hasta la hora de inicio del día siguiente.
   if (intervaloCalculado <= 0 && cigarrosRestantes > 0) {
-    return calcularIntervaloInicial(config);
+    const inicioManana = addMinutes(timeStringToDate(config.hora_inicio, horaActual), 24 * 60);
+    return differenceInMinutes(inicioManana, horaActual);
   }
   
   return intervaloCalculado;
