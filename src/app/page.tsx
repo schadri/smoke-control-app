@@ -106,7 +106,7 @@ export default function Dashboard() {
     }
   }, [nextCigaretteTime, isGoalReached, config]);
 
-  const canSmokeNow = !isGoalReached && nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
+  const canSmokeNow = !isGoalReached && (!nextCigaretteTime || isBefore(nextCigaretteTime, new Date()));
 
   const handleRecord = async (esEmergencia: boolean) => {
     if (!config) return;

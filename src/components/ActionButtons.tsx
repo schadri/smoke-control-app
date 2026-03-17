@@ -29,7 +29,7 @@ export function ActionButtons({ canSmokeNow, onRecord, isGoalReached }: Props) {
           className="flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white p-4 rounded-2xl shadow-lg transition-all disabled:opacity-50"
         >
           <PlusCircle className="w-6 h-6" />
-          <span className="font-semibold text-lg">Registrar Consumo Permitido</span>
+          <span className="font-semibold text-lg">Registrar Pucho Permitido</span>
         </button>
       ) : (
         <button
@@ -40,7 +40,7 @@ export function ActionButtons({ canSmokeNow, onRecord, isGoalReached }: Props) {
           <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full -translate-x-full transition-transform duration-500 ease-in-out skew-x-12" />
           <AlertTriangle className={`w-6 h-6 ${isGoalReached ? '' : 'animate-pulse'}`} />
           <span className="font-semibold text-lg">
-            {isGoalReached ? 'Registrar Consumo Extra' : '¡Emergencia! No aguanto'}
+            {isGoalReached ? 'Registrar Pucho Extra' : 'Fumé un pucho (Urgencia)'}
           </span>
         </button>
       )}
