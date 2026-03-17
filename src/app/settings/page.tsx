@@ -120,7 +120,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Hora Inicio (24hs)
+                Hora Inicio
               </label>
               <input 
                 type="time" 
@@ -133,7 +133,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Hora Fin (24hs)
+                Hora Fin
               </label>
               <input 
                 type="time" 
