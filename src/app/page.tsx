@@ -96,11 +96,16 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen pb-24 max-w-lg mx-auto w-full relative">
       <header className="flex justify-between items-center p-6 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
-        <div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent">
-            Controla los Puchos.
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Progreso Diario: {logsToday}/{config?.meta_diaria || 10}</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-full p-1 shadow-sm border border-slate-100 dark:border-slate-800">
+            <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent">
+              Controla los Puchos.
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Progreso Diario: {logsToday}/{config?.meta_diaria || 10}</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Link href="/settings" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">

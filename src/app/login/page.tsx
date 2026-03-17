@@ -62,6 +62,9 @@ export default function LoginPage() {
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
+          <div className="w-20 h-20 bg-white rounded-full p-2 shadow-md border border-slate-100 dark:border-slate-800 mx-auto mb-6">
+            <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
+          </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-500 to-sky-500 bg-clip-text text-transparent mb-2">
             Controla los Puchos.
           </h1>
