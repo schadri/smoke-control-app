@@ -192,8 +192,33 @@ export default function SettingsPage() {
 
                     alert('Paso 2: Permiso concedido. Obteniendo Service Worker...');
                     
-                    const registration = await navigator.serviceWorker.ready;
-                    alert('Paso 3: Service Worker listo.');
+                    // Función con timeout para .ready
+                    const getSWReady = () => {
+                      return Promise.race([
+                        navigator.serviceWorker.ready,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout esperando Service Worker (10s)')), 10000))
+                      ]) as Promise<ServiceWorkerRegistration>;
+                    };
+
+                    let registration: ServiceWorkerRegistration;
+                    try {
+                      registration = await getSWReady();
+                    } catch (e) {
+                      alert('Aviso: El Service Worker tardó mucho. Intentando registro manual...');
+                      registration = await navigator.serviceWorker.register('/sw.js');
+                    }
+
+                    if (!registration) {
+                      throw new Error('No se pudo obtener el registro del Service Worker.');
+                    }
+                    
+                    alert(`Paso 3: Service Worker detectado (Estado: ${registration.active ? 'Activo' : 'Cargando'}).`);
+                    
+                    // Forzar activación si está esperando
+                    if (registration.waiting) {
+                      alert('Service Worker en espera. Intentando activar...');
+                      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
 
                     const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                     if (!applicationServerKey) {
