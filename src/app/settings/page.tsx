@@ -54,7 +54,7 @@ export default function SettingsPage() {
 
   const handleTestPush = async () => {
     try {
-      await fetch('/api/push/send', {
+      const res = await fetch('/api/push/send', {
         method: 'POST',
         body: JSON.stringify({
           title: 'Prueba de Humo 🚭',
@@ -62,6 +62,13 @@ export default function SettingsPage() {
         }),
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      if (res.ok) {
+        alert('Se ha enviado la señal de notificación. Si no te llega en unos segundos, asegúrate de haber permitido las notificaciones en tu celular.');
+      } else {
+        const data = await res.json();
+        alert('Error: ' + (data.error || 'No se pudo enviar la prueba'));
+      }
     } catch (error) {
       console.error('Error enviando prueba push:', error);
       alert('Error al enviar la prueba. Verifica tu conexión.');
@@ -149,33 +156,61 @@ export default function SettingsPage() {
                 checked={formData.notificaciones_activas}
                 onChange={async (e) => {
                   const checked = e.target.checked;
+                  
+                  // Actualizar UI inmediatamente
+                  setFormData({...formData, notificaciones_activas: checked});
+
                   if (checked) {
-                    if (Notification.permission !== 'granted') {
-                      const permission = await Notification.requestPermission();
-                      if (permission !== 'granted') {
-                        alert('Para recibir avisos, debes permitir las notificaciones en tu navegador.');
+                    try {
+                      // Detección de soporte
+                      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                        alert('Tu navegador no soporta notificaciones Push nativas. Si usas iPhone, debes añadir esta app a tu pantalla de inicio primero.');
+                        setFormData(prev => ({...prev, notificaciones_activas: false}));
                         return;
                       }
-                    }
 
-                    // Suscribir a Web Push
-                    try {
+                      if (Notification.permission !== 'granted') {
+                        const permission = await Notification.requestPermission();
+                        if (permission !== 'granted') {
+                          alert('Permiso de notificación denegado. Actívalo en la configuración de tu navegador.');
+                          setFormData(prev => ({...prev, notificaciones_activas: false}));
+                          return;
+                        }
+                      }
+
                       const registration = await navigator.serviceWorker.ready;
+                      
+                      if (!registration.pushManager) {
+                        alert('Error: PushManager no disponible en este dispositivo.');
+                        setFormData(prev => ({...prev, notificaciones_activas: false}));
+                        return;
+                      }
+
+                      const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                      if (!applicationServerKey) {
+                        throw new Error('Configuración de servidor incompleta (Missing VAPID Key)');
+                      }
+
                       const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+                        applicationServerKey: urlBase64ToUint8Array(applicationServerKey)
                       });
 
-                      await fetch('/api/push/subscribe', {
+                      const res = await fetch('/api/push/subscribe', {
                         method: 'POST',
                         body: JSON.stringify(subscription),
                         headers: { 'Content-Type': 'application/json' }
                       });
+
+                      if (!res.ok) throw new Error('No se pudo guardar la suscripción en el servidor');
+                      
+                      alert('¡Listo! Este celular ya está registrado para recibir avisos.');
                     } catch (error) {
                       console.error('Error al suscribir a push:', error);
+                      alert('Fallo al activar: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+                      setFormData(prev => ({...prev, notificaciones_activas: false}));
                     }
                   }
-                  setFormData({...formData, notificaciones_activas: checked});
                 }}
               />
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
