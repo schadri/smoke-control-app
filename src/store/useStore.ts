@@ -55,7 +55,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         .eq('id', session.user.id)
         .maybeSingle();
       
-      const config = (profileData?.config as UserConfig | null) || {
+      const defaultConfig: UserConfig = {
         meta_diaria: 10,
         hora_inicio: '08:00',
         hora_fin: '22:00',
@@ -63,6 +63,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         precio_paquete: 5.00,
         notificaciones_activas: false
       };
+
+      let config = (profileData?.config as UserConfig | null) || defaultConfig;
+
+      // If no profile row exists, create one so FK constraints on logs/push work
+      if (!profileData) {
+        await supabase
+          .from('profiles')
+          .upsert({ id: session.user.id, config: defaultConfig as any }, { onConflict: 'id' });
+      }
+
       set({ config });
 
       // Fetch Logs for the last 48 hours to cover window crossings
