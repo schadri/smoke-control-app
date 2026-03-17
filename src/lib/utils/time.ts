@@ -9,11 +9,41 @@ export interface UserConfig {
   notificaciones_activas?: boolean;
 }
 
-/**
- * Convierte un string de hora 'HH:mm' a un objeto Date usando el día actual.
- */
 export function timeStringToDate(timeStr: string, referenceDate: Date = new Date()): Date {
   return parse(timeStr, 'HH:mm', referenceDate);
+}
+
+/**
+ * Obtiene la ventana operativa (inicio y fin) para el momento dado,
+ * manejando correctamente el cruce de medianoche.
+ */
+export function getOperationalWindow(config: UserConfig, now: Date = new Date()) {
+  const inicio = timeStringToDate(config.hora_inicio, now);
+  let fin = timeStringToDate(config.hora_fin, now);
+
+  // Caso normal: 09:00 a 22:00.
+  // Caso medianoche: 09:00 a 02:00.
+  if (isBefore(fin, inicio)) {
+    fin = addMinutes(fin, 24 * 60); // Ajustar fin al día siguiente
+  }
+
+  // Si 'now' es muy temprano (ej. 01:00 am) y el rango era 09-02, 
+  // 'inicio' será hoy 09am y 'fin' mañana 02am.
+  // Pero 'now' (01:00 am) está dentro del rango operativo que empezó AYER.
+  const finAyer = addMinutes(fin, -24 * 60);
+  if (isBefore(now, inicio) && isBefore(now, finAyer)) {
+    return {
+      inicio: addMinutes(inicio, -24 * 60),
+      fin: finAyer,
+      isNextDay: true
+    };
+  }
+
+  return { 
+    inicio, 
+    fin,
+    isNextDay: false
+  };
 }
 
 /**
@@ -21,18 +51,9 @@ export function timeStringToDate(timeStr: string, referenceDate: Date = new Date
  * a lo largo de las horas permitidas.
  */
 export function calcularIntervaloInicial(config: UserConfig): number {
-  const inicio = timeStringToDate(config.hora_inicio);
-  let fin = timeStringToDate(config.hora_fin);
-
-  // Si la hora de fin es menor a la de inicio, asumimos que cruza la medianoche (ej. 23:00 a 02:00)
-  if (isBefore(fin, inicio)) {
-    fin = addMinutes(fin, 24 * 60);
-  }
-
+  const { inicio, fin } = getOperationalWindow(config);
   const minutosTotales = differenceInMinutes(fin, inicio);
-  if (config.meta_diaria <= 1) return minutosTotales; // Evita división por cero
-  
-  // Dividimos el tiempo disponible entre los "espacios" entre cigarrillos (meta - 1)
+  if (config.meta_diaria <= 1) return minutosTotales;
   return Math.floor(minutosTotales / (config.meta_diaria - 1));
 }
 
@@ -44,17 +65,7 @@ export function calcularIntervaloInicial(config: UserConfig): number {
  * @returns Nuevo intervalo en minutos
  */
 export function calcularIntervaloRestante(horaActual: Date, logsDelDia: number, config: UserConfig): number {
-  let fin = timeStringToDate(config.hora_fin, horaActual);
-  const inicio = timeStringToDate(config.hora_inicio, horaActual);
-
-  // Ajuste simple si cruza la medianoche
-  if (isBefore(fin, inicio)) {
-    fin = addMinutes(fin, 24 * 60);
-    // Si la hora actual es antes del inicio (ej 01:00 am) y cruza medianoche, acomodamos fin
-    if (isBefore(horaActual, inicio)) {
-        fin = timeStringToDate(config.hora_fin, horaActual);
-    }
-  }
+  const { fin } = getOperationalWindow(config, horaActual);
 
   const cigarrosRestantes = config.meta_diaria - logsDelDia;
   
@@ -65,10 +76,13 @@ export function calcularIntervaloRestante(horaActual: Date, logsDelDia: number, 
   const intervaloCalculado = Math.floor(Math.max(0, minutosRestantes) / cigarrosRestantes);
 
   // Si ya pasó la hora de fin (intervalo <= 0) pero aún quedan cigarrillos,
-  // bloqueamos hasta la hora de inicio del día siguiente.
+  // bloqueamos hasta el PRÓXIMO inicio de jornada.
   if (intervaloCalculado <= 0 && cigarrosRestantes > 0) {
-    const inicioManana = addMinutes(timeStringToDate(config.hora_inicio, horaActual), 24 * 60);
-    return differenceInMinutes(inicioManana, horaActual);
+    // Obtenemos la ventana para 'ahora'. Si estamos post-fin, el siguiente inicio 
+    // es la hora de inicio del día natural siguiente a la ventana.
+    const { inicio } = getOperationalWindow(config, horaActual);
+    const proximoInicio = addMinutes(inicio, 24 * 60);
+    return Math.max(0, differenceInMinutes(proximoInicio, horaActual));
   }
   
   return intervaloCalculado;

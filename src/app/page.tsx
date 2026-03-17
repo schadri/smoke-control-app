@@ -6,7 +6,7 @@ import { ActionButtons } from '@/components/ActionButtons';
 import { AnalyticsChart } from '@/components/AnalyticsChart';
 import { useAppStore } from '@/store/useStore';
 import { addMinutes, isBefore, isAfter } from 'date-fns';
-import { calcularIntervaloRestante, calcularIntervaloInicial, timeStringToDate } from '@/lib/utils/time';
+import { calcularIntervaloRestante, calcularIntervaloInicial, timeStringToDate, getOperationalWindow } from '@/lib/utils/time';
 import { Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,17 +49,18 @@ export default function Dashboard() {
       interval = calcularIntervaloRestante(lastLogAt, logsToday, config);
       referenceTime = lastLogAt;
     } else {
-      const startTime = timeStringToDate(config.hora_inicio);
-      const endTime = timeStringToDate(config.hora_fin);
+      const { inicio, fin } = getOperationalWindow(config);
       const now = new Date();
 
-      // Si ya pasó la hora de fin y no hay logs (ej. tras un reinicio nocturno),
-      // bloquear hasta mañana a la hora de inicio.
-      if (isAfter(now, endTime)) {
-        const nextStart = addMinutes(startTime, 24 * 60);
-        setNextCigaretteTime(nextStart);
+      if (isAfter(now, fin)) {
+        // Mañana a la misma hora de inicio
+        setNextCigaretteTime(addMinutes(inicio, 24 * 60));
+      } else if (isBefore(now, inicio)) {
+        // Hoy a la hora de inicio
+        setNextCigaretteTime(inicio);
       } else {
-        setNextCigaretteTime(startTime);
+        // Caso de respaldo (no debería pasar por la lógica de arriba)
+        setNextCigaretteTime(inicio);
       }
       return;
     }
