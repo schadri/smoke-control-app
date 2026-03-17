@@ -120,11 +120,12 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Hora Inicio
+                Hora Inicio (24hs)
               </label>
               <input 
                 type="time" 
                 required
+                step="60"
                 value={formData.hora_inicio}
                 onChange={e => setFormData({...formData, hora_inicio: e.target.value})}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -132,11 +133,12 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Hora Fin
+                Hora Fin (24hs)
               </label>
               <input 
                 type="time" 
                 required
+                step="60"
                 value={formData.hora_fin}
                 onChange={e => setFormData({...formData, hora_fin: e.target.value})}
                 className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
