@@ -23,14 +23,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, existed: true });
   }
 
-  // Create profile with default config
+  // Create profile — requires email (NOT NULL in schema)
   const { error } = await supabase
     .from('profiles')
-    .insert({ id: user.id, config });
+    .insert({ 
+      id: user.id, 
+      email: user.email || '',
+      config 
+    });
 
   if (error) {
     console.error('Error creating profile:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, details: error }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, existed: false });
