@@ -42,6 +42,7 @@ export default function SettingsPage() {
     notificaciones_activas: config?.notificaciones_activas ?? false,
   });
 
+  const [isSubscribing, setIsSubscribing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,86 +163,76 @@ export default function SettingsPage() {
                 onChange={async (e) => {
                   const checked = e.target.checked;
                   
-                  // Actualizar UI inmediatamente
-                  setFormData(prev => ({...prev, notificaciones_activas: checked}));
+                  if (!checked) {
+                    setFormData(prev => ({...prev, notificaciones_activas: false}));
+                    // Opcionalmente podrías desuscribir aquí, pero por ahora solo apagamos el flag
+                    return;
+                  }
 
-                  if (checked) {
-                    try {
-                      console.log('Iniciando suscripción...');
-                      
-                      // Detección de soporte
-                      if (!('serviceWorker' in navigator)) {
-                        alert('Error: Tu navegador no soporta Service Workers.');
-                        setFormData(prev => ({...prev, notificaciones_activas: false}));
-                        return;
-                      }
+                  setIsSubscribing(true);
+                  setFormData(prev => ({...prev, notificaciones_activas: true}));
 
-                      if (!('PushManager' in window)) {
-                        alert('Error: Tu navegador no soporta PushManager. (Pista: En iPhone esto solo funciona si "Instalas" la app en la pantalla de inicio)');
-                        setFormData(prev => ({...prev, notificaciones_activas: false}));
-                        return;
-                      }
-
-                      if (!('Notification' in window)) {
-                        alert('Error: Tu navegador no soporta la API de Notificaciones.');
-                        setFormData(prev => ({...prev, notificaciones_activas: false}));
-                        return;
-                      }
-
-                      if (Notification.permission !== 'granted') {
-                        const permission = await Notification.requestPermission();
-                        if (permission !== 'granted') {
-                          alert('Permiso denegado. Por favor, habilita las notificaciones en la configuración de la página.');
-                          setFormData(prev => ({...prev, notificaciones_activas: false}));
-                          return;
-                        }
-                      }
-
-                      console.log('Esperando Service Worker...');
-                      const registration = await navigator.serviceWorker.ready;
-                      
-                      if (!registration.pushManager) {
-                        alert('Error: pushManager no encontrado en el Service Worker. Intenta recargar la app.');
-                        setFormData(prev => ({...prev, notificaciones_activas: false}));
-                        return;
-                      }
-
-                      const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-                      if (!applicationServerKey) {
-                        alert('Error: Llave pública VAPID no configurada en el cliente.');
-                        setFormData(prev => ({...prev, notificaciones_activas: false}));
-                        return;
-                      }
-
-                      console.log('Suscribiendo...');
-                      const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(applicationServerKey)
-                      });
-
-                      console.log('Enviando suscripción al servidor...');
-                      const res = await fetch('/api/push/subscribe', {
-                        method: 'POST',
-                        body: JSON.stringify(subscription),
-                        headers: { 'Content-Type': 'application/json' }
-                      });
-
-                      if (!res.ok) {
-                        const errorData = await res.json();
-                        alert(`Error del servidor: ${errorData.error}\nDetalle: ${errorData.details || 'ninguno'}`);
-                        throw new Error(errorData.error || 'Fallo en la respuesta del servidor');
-                      }
-                      
-                      alert('✅ ¡Suscrito con éxito! Ya deberías recibir notificaciones de prueba.');
-                    } catch (error) {
-                      console.error('Error al suscribir a push:', error);
-                      alert('❌ Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
-                      setFormData(prev => ({...prev, notificaciones_activas: false}));
+                  try {
+                    console.log('--- DIAGNÓSTICO PUSH ---');
+                    
+                    if (!('serviceWorker' in navigator)) {
+                      throw new Error('Tu navegador no soporta Service Workers.');
                     }
+
+                    if (!('PushManager' in window)) {
+                      throw new Error('Tu navegador no soporta PushManager (Prueba instalar la PWA primero).');
+                    }
+
+                    alert('Paso 1: Detectado soporte de Push. Solicitando permiso...');
+                    
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                      throw new Error('Permiso de notificación denegado.');
+                    }
+
+                    alert('Paso 2: Permiso concedido. Obteniendo Service Worker...');
+                    
+                    const registration = await navigator.serviceWorker.ready;
+                    alert('Paso 3: Service Worker listo.');
+
+                    const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                    if (!applicationServerKey) {
+                      throw new Error('Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY no encontrada.');
+                    }
+
+                    alert('Paso 4: Intentando suscripción con la red de notificaciones...');
+                    const subscription = await registration.pushManager.subscribe({
+                      userVisibleOnly: true,
+                      applicationServerKey: urlBase64ToUint8Array(applicationServerKey)
+                    }).catch(err => {
+                      console.error('Error en pushManager.subscribe:', err);
+                      throw new Error(`Error en PushManager: ${err.message}`);
+                    });
+
+                    alert('Paso 5: Suscripción obtenida del navegador. Enviando al servidor...');
+                    
+                    const res = await fetch('/api/push/subscribe', {
+                      method: 'POST',
+                      body: JSON.stringify(subscription),
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (!res.ok) {
+                      const errorData = await res.json();
+                      throw new Error(`Error Servidor (${res.status}): ${errorData.error}\n${errorData.details || ''}`);
+                    }
+                    
+                    alert('✅ ¡ÉXITO! Tu dispositivo se ha registrado correctamente.');
+                  } catch (error) {
+                    console.error('FALLO TOTAL SUSCRIPCIÓN:', error);
+                    alert('❌ FALLO: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+                    setFormData(prev => ({...prev, notificaciones_activas: false}));
+                  } finally {
+                    setIsSubscribing(false);
                   }
                 }}
               />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              <div className={`w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[6px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 ${isSubscribing ? 'opacity-50 grayscale animate-pulse' : ''}`}></div>
             </div>
           </label>
 
