@@ -1,8 +1,8 @@
-# Controla los Puchos 🚬 (PWA) ➔ 🚭
+# Controla los Puchos 
 
 Una Aplicación Web Progresiva (PWA) construida con **Next.js**, **Supabase** y **Tailwind CSS**, diseñada para ayudar a los usuarios a reducir progresiva y ordenadamente su consumo de tabaco mediante la distribución inteligente de intervalos de tiempo.
 
-## 🚀 Características Principales
+## Características Principales
 
 - **Gestión Inteligente de Tiempo**: Calcula automáticamente el tiempo óptimo entre cada cigarrillo basado en una "meta diaria" y un "rango de horas establecido".
 - **Botón de Emergencia (Panic Button)**: Si el usuario experimenta un pico de ansiedad y fuma antes de tiempo, la aplicación recalcula la distribución del resto del día para asegurar que no se supere la meta total.
@@ -11,7 +11,7 @@ Una Aplicación Web Progresiva (PWA) construida con **Next.js**, **Supabase** y 
 - **Modo Oscuro Nativo**: Interfaz fluida y con soporte nativo para *Dark Mode* vía Tailwind, pensada con una arquitectura *Mobile-First*.
 - **PWA Instalable**: Soporte offline y capacidad de instalarse en la pantalla de inicio del móvil gracias a `next-pwa`.
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 - **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) + React 19
 - **Base de Datos & Auth**: [Supabase](https://supabase.com/) (PostgreSQL + RLS)
@@ -21,14 +21,14 @@ Una Aplicación Web Progresiva (PWA) construida con **Next.js**, **Supabase** y 
 - **Gráficas**: [Recharts](https://recharts.org/en-US/)
 - **Iconografía**: [Lucide React](https://lucide.dev/)
 
-## ⚙️ Estructura de Base de Datos (Supabase)
+## Estructura de Base de Datos (Supabase)
 
 El proyecto asume la existencia de las siguientes tablas (encuentra el script SQL completo en `supabase/schema.sql`):
 
 1. **`profiles`**: Extiende la tabla de usuarios autenticados. Contiene un JSONB `config` que guarda: `{meta_diaria, hora_inicio, hora_fin, modo_reduccion_activa, precio_paquete}`.
 2. **`logs`**: Historial inmutable de cada cigarrillo consumido. Incluye un booleano `es_emergencia` y el `intervalo_recalculado` en ese preciso momento.
 
-## 🚦 Instalación y Desarrollo Local
+## Instalación y Desarrollo Local
 
 1. **Clonar el repositorio y entrar al directorio:**
    ```bash
@@ -57,7 +57,7 @@ El proyecto asume la existencia de las siguientes tablas (encuentra el script SQ
    ```
    Abre [http://localhost:3000](http://localhost:3000) en tu navegador local o en el móvil (usando la IP de red local) para ver el resultado.
 
-## 📱 PWA y Compilación a Producción
+## PWA y Compilación a Producción
 
 Para compilar y testear la PWA localmente simulando producción:
 ```bash
