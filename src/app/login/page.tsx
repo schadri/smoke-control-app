@@ -9,10 +9,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
-  const [isReset, setIsReset] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   
   const router = useRouter();
   const supabase = createClient();
@@ -23,15 +21,6 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      if (isReset) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
-        });
-        if (error) throw error;
-        setMessage('Se ha enviado un correo de recuperación a tu email.');
-        return;
-      }
-
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -80,11 +69,7 @@ export default function LoginPage() {
             Controla los Puchos.
           </h1>
           <p className="text-slate-500 dark:text-slate-400">
-            {isReset 
-              ? 'Ingresa tu email para recuperar tu cuenta' 
-              : isLogin 
-                ? 'Inicia sesión para continuar tu progreso' 
-                : 'Crea una cuenta para empezar a reducir'}
+            {isLogin ? 'Inicia sesión para continuar tu progreso' : 'Crea una cuenta para empezar a reducir'}
           </p>
         </div>
 
@@ -118,12 +103,6 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-
-            {message && (
-              <div className="p-3 text-sm text-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 rounded-xl">
-                {message}
-              </div>
-            )}
             
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
@@ -140,37 +119,20 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {!isReset && (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</label>
-                  {isLogin && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setIsReset(true);
-                        setError(null);
-                        setMessage(null);
-                      }}
-                      className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input 
-                    type="password" 
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-slate-900 dark:text-white"
-                    placeholder="••••••••"
-                  />
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input 
+                  type="password" 
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-slate-900 dark:text-white"
+                  placeholder="••••••••"
+                />
               </div>
-            )}
+            </div>
 
             <button 
               type="submit"
@@ -181,7 +143,7 @@ export default function LoginPage() {
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               ) : (
                 <>
-                  {isReset ? 'Enviar instrucciones' : isLogin ? 'Ingresar' : 'Registrarse'}
+                  {isLogin ? 'Ingresar' : 'Registrarse'}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -190,23 +152,11 @@ export default function LoginPage() {
         </div>
 
         <button 
-          onClick={() => {
-            if (isReset) {
-              setIsReset(false);
-            } else {
-              setIsLogin(!isLogin);
-            }
-            setError(null);
-            setMessage(null);
-          }}
+          onClick={() => setIsLogin(!isLogin)}
           disabled={loading}
           className="w-full text-center text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
         >
-          {isReset 
-            ? 'Volver al inicio de sesión' 
-            : isLogin 
-              ? '¿No tienes cuenta? Regístrate aquí' 
-              : '¿Ya tienes cuenta? Inicia sesión'}
+          {isLogin ? '¿No tienes cuenta? Regístrate aquí' : '¿Ya tienes cuenta? Inicia sesión'}
         </button>
       </div>
     </main>
