@@ -7,14 +7,19 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  try {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  } catch (e) {
+    console.error('Error in urlBase64ToUint8Array:', e);
+    throw new Error('Formato de llave VAPID inválido');
   }
-  return outputArray;
 }
 
 export default function SettingsPage() {
@@ -158,13 +163,27 @@ export default function SettingsPage() {
                   const checked = e.target.checked;
                   
                   // Actualizar UI inmediatamente
-                  setFormData({...formData, notificaciones_activas: checked});
+                  setFormData(prev => ({...prev, notificaciones_activas: checked}));
 
                   if (checked) {
                     try {
+                      console.log('Iniciando suscripción...');
+                      
                       // Detección de soporte
-                      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                        alert('Tu navegador no soporta notificaciones Push nativas. Si usas iPhone, debes añadir esta app a tu pantalla de inicio primero.');
+                      if (!('serviceWorker' in navigator)) {
+                        alert('Error: Tu navegador no soporta Service Workers.');
+                        setFormData(prev => ({...prev, notificaciones_activas: false}));
+                        return;
+                      }
+
+                      if (!('PushManager' in window)) {
+                        alert('Error: Tu navegador no soporta PushManager. (Pista: En iPhone esto solo funciona si "Instalas" la app en la pantalla de inicio)');
+                        setFormData(prev => ({...prev, notificaciones_activas: false}));
+                        return;
+                      }
+
+                      if (!('Notification' in window)) {
+                        alert('Error: Tu navegador no soporta la API de Notificaciones.');
                         setFormData(prev => ({...prev, notificaciones_activas: false}));
                         return;
                       }
@@ -172,42 +191,50 @@ export default function SettingsPage() {
                       if (Notification.permission !== 'granted') {
                         const permission = await Notification.requestPermission();
                         if (permission !== 'granted') {
-                          alert('Permiso de notificación denegado. Actívalo en la configuración de tu navegador.');
+                          alert('Permiso denegado. Por favor, habilita las notificaciones en la configuración de la página.');
                           setFormData(prev => ({...prev, notificaciones_activas: false}));
                           return;
                         }
                       }
 
+                      console.log('Esperando Service Worker...');
                       const registration = await navigator.serviceWorker.ready;
                       
                       if (!registration.pushManager) {
-                        alert('Error: PushManager no disponible en este dispositivo.');
+                        alert('Error: pushManager no encontrado en el Service Worker. Intenta recargar la app.');
                         setFormData(prev => ({...prev, notificaciones_activas: false}));
                         return;
                       }
 
                       const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                       if (!applicationServerKey) {
-                        throw new Error('Configuración de servidor incompleta (Missing VAPID Key)');
+                        alert('Error: Llave pública VAPID no configurada en el cliente.');
+                        setFormData(prev => ({...prev, notificaciones_activas: false}));
+                        return;
                       }
 
+                      console.log('Suscribiendo...');
                       const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(applicationServerKey)
                       });
 
+                      console.log('Enviando suscripción al servidor...');
                       const res = await fetch('/api/push/subscribe', {
                         method: 'POST',
                         body: JSON.stringify(subscription),
                         headers: { 'Content-Type': 'application/json' }
                       });
 
-                      if (!res.ok) throw new Error('No se pudo guardar la suscripción en el servidor');
+                      if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error || 'Fallo en la respuesta del servidor');
+                      }
                       
-                      alert('¡Listo! Este celular ya está registrado para recibir avisos.');
+                      alert('✅ ¡Suscrito con éxito! Ya deberías recibir notificaciones de prueba.');
                     } catch (error) {
                       console.error('Error al suscribir a push:', error);
-                      alert('Fallo al activar: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+                      alert('❌ Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
                       setFormData(prev => ({...prev, notificaciones_activas: false}));
                     }
                   }
