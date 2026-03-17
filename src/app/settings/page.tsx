@@ -228,6 +228,7 @@ export default function SettingsPage() {
 
                       if (!res.ok) {
                         const errorData = await res.json();
+                        alert(`Error del servidor: ${errorData.error}\nDetalle: ${errorData.details || 'ninguno'}`);
                         throw new Error(errorData.error || 'Fallo en la respuesta del servidor');
                       }
                       
