@@ -13,9 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Controlador de Cigarrillos",
+  title: "Controla los Puchos",
   description: "Gestión y reducción progresiva del consumo de tabaco",
-  manifest: "/manifest.json",
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
