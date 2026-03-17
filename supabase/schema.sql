@@ -49,3 +49,22 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Tabla Suscripciones Push
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  keys JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS para push_subscriptions
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Usuarios pueden ver sus propias suscripciones" ON push_subscriptions;
+CREATE POLICY "Usuarios pueden ver sus propias suscripciones" ON push_subscriptions FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Usuarios pueden insertar sus propias suscripciones" ON push_subscriptions;
+CREATE POLICY "Usuarios pueden insertar sus propias suscripciones" ON push_subscriptions FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Usuarios pueden eliminar sus propias suscripciones" ON push_subscriptions;
+CREATE POLICY "Usuarios pueden eliminar sus propias suscripciones" ON push_subscriptions FOR DELETE USING (auth.uid() = user_id);
+

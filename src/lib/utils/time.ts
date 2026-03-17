@@ -6,6 +6,7 @@ export interface UserConfig {
   hora_fin: string; // 'HH:mm'
   modo_reduccion_activa: boolean;
   precio_paquete: number;
+  notificaciones_activas?: boolean;
 }
 
 /**

@@ -69,6 +69,7 @@ export default function Dashboard() {
   }, [config, logsToday, lastLogTimestamp, isGoalReached, refreshTrigger]);
 
   // Force re-render when timer hits zero
+  // Force re-render when timer hits zero
   useEffect(() => {
     if (!nextCigaretteTime || isGoalReached) return;
 
@@ -76,10 +77,19 @@ export default function Dashboard() {
     if (msUntilNext > 0) {
       const timeout = setTimeout(() => {
         setRefreshTrigger(prev => prev + 1);
+        
+        // Trigger notification if enabled
+        if (config?.notificaciones_activas && Notification.permission === 'granted') {
+          new Notification('¡Es tu momento!', {
+            body: 'Ya puedes fumar respetando tu meta diaria. 🚭',
+            icon: '/logo.svg',
+            badge: '/logo.svg',
+          });
+        }
       }, msUntilNext + 500);
       return () => clearTimeout(timeout);
     }
-  }, [nextCigaretteTime, isGoalReached]);
+  }, [nextCigaretteTime, isGoalReached, config]);
 
   const canSmokeNow = !isGoalReached && nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
 
