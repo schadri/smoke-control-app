@@ -141,7 +141,7 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen pb-24 max-w-lg mx-auto w-full relative">
+    <main className="min-h-screen pb-44 max-w-lg mx-auto w-full relative">
       <header className="flex justify-between items-center p-6 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-full p-1 shadow-sm border border-slate-100 dark:border-slate-800">
