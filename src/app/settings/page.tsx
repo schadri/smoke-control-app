@@ -165,7 +165,6 @@ export default function SettingsPage() {
                   
                   if (!checked) {
                     setFormData(prev => ({...prev, notificaciones_activas: false}));
-                    // Opcionalmente podrías desuscribir aquí, pero por ahora solo apagamos el flag
                     return;
                   }
 
@@ -173,31 +172,22 @@ export default function SettingsPage() {
                   setFormData(prev => ({...prev, notificaciones_activas: true}));
 
                   try {
-                    console.log('--- DIAGNÓSTICO PUSH ---');
-                    
                     if (!('serviceWorker' in navigator)) {
                       throw new Error('Tu navegador no soporta Service Workers.');
                     }
 
                     if (!('PushManager' in window)) {
-                      throw new Error('Tu navegador no soporta PushManager (Prueba instalar la PWA primero).');
+                      throw new Error('Tu navegador no soporta PushManager.');
                     }
 
-                    alert('Paso 1: Detectado soporte de Push. Solicitando permiso...');
-                    
                     const permission = await Notification.requestPermission();
                     if (permission !== 'granted') {
                       throw new Error('Permiso de notificación denegado.');
                     }
 
-                    alert('Paso 2: Permiso concedido. Buscando Service Worker activo...');
-                    
                     const getRegistration = async () => {
-                      // Primero intentamos con el estándar
                       const reg = await navigator.serviceWorker.getRegistration();
                       if (reg) return reg;
-                      
-                      // Si no hay, esperamos un poco al .ready
                       return Promise.race([
                         navigator.serviceWorker.ready,
                         new Promise((_, reject) => setTimeout(() => reject(new Error('SW no responde')), 5000))
@@ -208,9 +198,7 @@ export default function SettingsPage() {
                     try {
                       registration = await getRegistration();
                     } catch (e) {
-                      alert('Aviso: El SW no estaba listo. Intentando activación forzada...');
                       registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-                      // Esperar a que se instales
                       await new Promise(r => setTimeout(r, 2000));
                     }
 
@@ -218,9 +206,7 @@ export default function SettingsPage() {
                       throw new Error('No se encontró ningún Service Worker registrado.');
                     }
                     
-                    // Esperar activacion si es necesario
                     if (!registration.active) {
-                      alert('El Service Worker se está activando... espera un momento.');
                       let retry = 0;
                       while (!registration.active && retry < 10) {
                         await new Promise(r => setTimeout(r, 500));
@@ -228,29 +214,20 @@ export default function SettingsPage() {
                       }
                     }
 
-                    const swStatus = registration.active ? 'Activo' : (registration.installing ? 'Instalando' : 'Esperando');
-                    alert(`Paso 3: SW Detectado. Estado: ${swStatus}`);
-                    
                     if (!registration.active) {
                       throw new Error('El Service Worker no se activó a tiempo.');
                     }
 
                     const applicationServerKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                     if (!applicationServerKey) {
-                      throw new Error('Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY no encontrada.');
+                      throw new Error('Error: Llave pública no configurada.');
                     }
 
-                    alert('Paso 4: Intentando suscripción con la red de notificaciones...');
                     const subscription = await registration.pushManager.subscribe({
                       userVisibleOnly: true,
                       applicationServerKey: urlBase64ToUint8Array(applicationServerKey.trim())
-                    }).catch(err => {
-                      alert(`Error exacto de PushManager:\nNombre: ${err.name}\nMsg: ${err.message}`);
-                      throw err;
                     });
 
-                    alert('Paso 5: Suscripción obtenida del navegador. Enviando al servidor...');
-                    
                     const res = await fetch('/api/push/subscribe', {
                       method: 'POST',
                       body: JSON.stringify(subscription),
@@ -259,13 +236,13 @@ export default function SettingsPage() {
 
                     if (!res.ok) {
                       const errorData = await res.json();
-                      throw new Error(`Error Servidor (${res.status}): ${errorData.error}\n${errorData.details || ''}`);
+                      throw new Error(`Error Servidor (${res.status}): ${errorData.error}`);
                     }
                     
-                    alert('✅ ¡ÉXITO! Tu dispositivo se ha registrado correctamente.');
+                    alert('✅ ¡Notificaciones activadas con éxito!');
                   } catch (error) {
-                    console.error('FALLO TOTAL SUSCRIPCIÓN:', error);
-                    alert('❌ FALLO: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+                    console.error('Error suscribiendo a push:', error);
+                    alert('❌ Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
                     setFormData(prev => ({...prev, notificaciones_activas: false}));
                   } finally {
                     setIsSubscribing(false);
