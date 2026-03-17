@@ -66,11 +66,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       let config = (profileData?.config as UserConfig | null) || defaultConfig;
 
-      // If no profile row exists, create one so FK constraints on logs/push work
+      // If no profile row exists, create one via server API so FK constraints work
       if (!profileData) {
-        await supabase
-          .from('profiles')
-          .upsert({ id: session.user.id, config: defaultConfig as any }, { onConflict: 'id' });
+        await fetch('/api/profile/ensure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: defaultConfig }),
+        });
       }
 
       set({ config });
