@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-  const { config, updateConfig, user } = useAppStore();
+  const { config, updateConfig, user, resetTodayLogs } = useAppStore();
   const router = useRouter();
 
   // Redirect to login if unauthenticated
@@ -118,24 +118,6 @@ export default function SettingsPage() {
           </label>
         </section>
 
-        <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Economía</h2>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
-              Precio promedio del paquete (USD/EUR)
-            </label>
-            <input 
-              type="number" 
-              step="0.01"
-              min="0"
-              value={formData.precio_paquete}
-              onChange={e => setFormData({...formData, precio_paquete: Number(e.target.value)})}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-            />
-          </div>
-        </section>
-
         <button 
           type="submit"
           disabled={saving}
@@ -151,6 +133,27 @@ export default function SettingsPage() {
           )}
         </button>
       </form>
+
+      <div className="p-6 pt-0">
+        <section className="space-y-4 pt-8 border-t border-slate-200 dark:border-slate-800">
+          <h2 className="text-lg font-semibold text-rose-600 dark:text-rose-400">Zona de Peligro</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Estas acciones son permanentes y no se pueden deshacer.
+          </p>
+          
+          <button 
+            onClick={async () => {
+              if (window.confirm('¿Estás seguro de que quieres reiniciar todo el progreso de hoy? Se borrarán todos los registros.')) {
+                await resetTodayLogs();
+                router.push('/');
+              }
+            }}
+            className="w-full bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 p-4 rounded-xl font-semibold border border-rose-100 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-all active:scale-[0.98]"
+          >
+            Reiniciar Progreso del Día
+          </button>
+        </section>
+      </div>
     </main>
   );
 }

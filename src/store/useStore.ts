@@ -25,6 +25,7 @@ interface AppState {
   fetchInitialData: () => Promise<void>;
   updateConfig: (newConfig: UserConfig) => Promise<void>;
   addLog: (esEmergencia: boolean, intervaloActual: number) => Promise<void>;
+  resetTodayLogs: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -119,6 +120,28 @@ export const useAppStore = create<AppState>((set, get) => ({
     } else {
       // Replace optimistic log with real DB log
       set({ logs: logs.map(l => l.id === newLogLocal.id ? data : l) });
+    }
+  },
+
+  resetTodayLogs: async () => {
+    const { user } = get();
+    if (!user) return;
+    const supabase = createClient();
+    const todayStart = startOfDay(new Date()).toISOString();
+
+    set({ isLoading: true });
+    try {
+      await supabase
+        .from('logs')
+        .delete()
+        .eq('user_id', user.id)
+        .gte('created_at', todayStart);
+      
+      set({ logs: [] });
+    } catch (error) {
+      console.error('Error resetting logs:', error);
+    } finally {
+      set({ isLoading: false });
     }
   },
 

@@ -12,8 +12,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
-  const { user, config, logs, isLoading, fetchInitialData, addLog, signOut } = useAppStore();
+  const { user, config, logs, isLoading, fetchInitialData, addLog, signOut, resetTodayLogs } = useAppStore();
   const [nextCigaretteTime, setNextCigaretteTime] = useState<Date | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const router = useRouter();
 
   // On mount, fetch data.
@@ -56,6 +57,19 @@ export default function Dashboard() {
     const nextTime = addMinutes(referenceTime, interval);
     setNextCigaretteTime(nextTime);
   }, [config, logsToday, lastLogTimestamp, isGoalReached]);
+
+  // Force re-render when timer hits zero
+  useEffect(() => {
+    if (!nextCigaretteTime || isGoalReached) return;
+
+    const msUntilNext = nextCigaretteTime.getTime() - Date.now();
+    if (msUntilNext > 0) {
+      const timeout = setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, msUntilNext + 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [nextCigaretteTime, isGoalReached]);
 
   const canSmokeNow = !isGoalReached && nextCigaretteTime ? isBefore(nextCigaretteTime, new Date()) : false;
 
