@@ -115,11 +115,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     if (error) {
       console.error('Error adding log:', error);
-      // Revert optimistic update
-      set({ logs: logs.filter(l => l.id !== newLogLocal.id) });
+      // Revert optimistic update using the latest state
+      set({ logs: get().logs.filter(l => l.id !== newLogLocal.id) });
     } else {
-      // Replace optimistic log with real DB log
-      set({ logs: logs.map(l => l.id === newLogLocal.id ? data : l) });
+      // Replace optimistic log with real DB log using the latest state
+      set({ logs: get().logs.map(l => l.id === newLogLocal.id ? data : l) });
     }
   },
 
