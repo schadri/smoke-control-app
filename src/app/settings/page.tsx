@@ -190,29 +190,36 @@ export default function SettingsPage() {
                       throw new Error('Permiso de notificación denegado.');
                     }
 
-                    alert('Paso 2: Permiso concedido. Obteniendo Service Worker...');
+                    alert('Paso 2: Permiso concedido. Buscando Service Worker activo...');
                     
-                    // Función con timeout para .ready
-                    const getSWReady = () => {
+                    const getRegistration = async () => {
+                      // Primero intentamos con el estándar
+                      const reg = await navigator.serviceWorker.getRegistration();
+                      if (reg) return reg;
+                      
+                      // Si no hay, esperamos un poco al .ready
                       return Promise.race([
                         navigator.serviceWorker.ready,
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout esperando Service Worker (10s)')), 10000))
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('SW no responde')), 5000))
                       ]) as Promise<ServiceWorkerRegistration>;
                     };
 
                     let registration: ServiceWorkerRegistration;
                     try {
-                      registration = await getSWReady();
+                      registration = await getRegistration();
                     } catch (e) {
-                      alert('Aviso: El Service Worker tardó mucho. Intentando registro manual...');
-                      registration = await navigator.serviceWorker.register('/sw.js');
+                      alert('Aviso: El SW no estaba listo. Intentando activación forzada...');
+                      registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                      // Esperar a que se instales
+                      await new Promise(r => setTimeout(r, 2000));
                     }
 
                     if (!registration) {
-                      throw new Error('No se pudo obtener el registro del Service Worker.');
+                      throw new Error('No se encontró ningún Service Worker registrado.');
                     }
                     
-                    alert(`Paso 3: Service Worker detectado (Estado: ${registration.active ? 'Activo' : 'Cargando'}).`);
+                    const swStatus = registration.active ? 'Activo' : (registration.installing ? 'Instalando' : 'Esperando');
+                    alert(`Paso 3: SW Detectado. Estado: ${swStatus}`);
                     
                     // Forzar activación si está esperando
                     if (registration.waiting) {
