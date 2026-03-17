@@ -44,6 +44,21 @@ export default function Dashboard() {
   useEffect(() => {
     if (!config) return;
 
+    const { inicio, fin } = getOperationalWindow(config);
+    const now = new Date();
+
+    // PRIORIDAD: Si estamos fuera del rango permitido (el hueco entre fin e inicio)
+    // Siempre bloqueamos hasta el próximo inicio, sin importar los logs.
+    if (isAfter(now, fin)) {
+      setNextCigaretteTime(addMinutes(inicio, 24 * 60));
+      return;
+    }
+    
+    if (isBefore(now, inicio)) {
+      setNextCigaretteTime(inicio);
+      return;
+    }
+
     if (isGoalReached) {
       setNextCigaretteTime(null);
       return;
@@ -57,19 +72,8 @@ export default function Dashboard() {
       interval = calcularIntervaloRestante(lastLogAt, logsToday, config);
       referenceTime = lastLogAt;
     } else {
-      const { inicio, fin } = getOperationalWindow(config);
-      const now = new Date();
-
-      if (isAfter(now, fin)) {
-        // Mañana a la misma hora de inicio
-        setNextCigaretteTime(addMinutes(inicio, 24 * 60));
-      } else if (isBefore(now, inicio)) {
-        // Hoy a la hora de inicio
-        setNextCigaretteTime(inicio);
-      } else {
-        // Caso de respaldo (no debería pasar por la lógica de arriba)
-        setNextCigaretteTime(inicio);
-      }
+      // No hay logs y estamos dentro del rango (por el check de arriba)
+      setNextCigaretteTime(inicio);
       return;
     }
 
