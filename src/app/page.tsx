@@ -94,12 +94,24 @@ export default function Dashboard() {
         setRefreshTrigger(prev => prev + 1);
         
         // Trigger notification if enabled
-        if (config?.notificaciones_activas && Notification.permission === 'granted') {
-          new Notification('¡Es tu momento!', {
-            body: 'Ya puedes fumar respetando tu meta diaria. 🚭',
-            icon: '/logo.svg',
-            badge: '/logo.svg',
-          });
+        if (config?.notificaciones_activas) {
+          if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification('¡Es tu momento!', {
+                body: 'Ya puedes fumar respetando tu meta diaria. 🚭',
+                icon: '/logo.svg',
+                badge: '/logo.svg',
+                data: '/',
+              });
+            });
+          } else if (Notification.permission === 'granted') {
+            // Fallback for environments where SW might not be ready/supported but notifications are
+            new Notification('¡Es tu momento!', {
+              body: 'Ya puedes fumar respetando tu meta diaria. 🚭',
+              icon: '/logo.svg',
+              badge: '/logo.svg',
+            });
+          }
         }
       }, msUntilNext + 500);
       return () => clearTimeout(timeout);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, X } from 'lucide-react';
+import { Download, X, Smartphone } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,7 +11,6 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     // Check if user already dismissed it in this session
@@ -43,43 +42,43 @@ export function InstallBanner() {
     setVisible(false);
   };
 
-  if (!visible || dismissed) return null;
+  if (!visible) return null;
 
   return (
-    <div className="fixed bottom-6 left-4 right-4 max-w-lg mx-auto z-40 animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-4">
-        {/* Icon */}
-        <div className="shrink-0 w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-          <img src="/logo.svg" alt="Logo" className="w-6 h-6" />
+    <div className="fixed bottom-8 left-4 right-4 max-w-sm mx-auto z-50 animate-slide-up">
+      <div className="relative bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/5 p-6 flex items-center gap-5">
+        {/* Floating Close Button */}
+        <button
+          onClick={handleDismiss}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-black rounded-full border border-slate-800 flex items-center justify-center text-white hover:bg-slate-800 transition-all shadow-lg active:scale-90"
+          aria-label="Cerrar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Icon Container */}
+        <div className="shrink-0 w-16 h-16 bg-emerald-500/10 rounded-3xl flex items-center justify-center border border-emerald-500/20 shadow-inner">
+          <Smartphone className="w-8 h-8 text-emerald-500" strokeWidth={1.5} />
         </div>
 
-        {/* Text */}
+        {/* Text Content */}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-tight">
-            Instalar la app
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Accedé más rápido desde el inicio.
+          <h3 className="font-bold text-white text-lg leading-tight tracking-tight">
+            Instalar GOS App
+          </h3>
+          <p className="text-sm text-slate-400 mt-1 leading-snug">
+            Instala nuestra app para recibir...
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleInstall}
-            className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-3 py-2 rounded-xl transition-all shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            Instalar
-          </button>
-          <button
-            onClick={handleDismiss}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-            aria-label="Cerrar"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Install Button */}
+        <button
+          onClick={handleInstall}
+          className="shrink-0 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-bold px-5 py-3 rounded-full transition-all shadow-lg shadow-emerald-600/20 active:scale-95 whitespace-nowrap"
+        >
+          <Download className="w-5 h-5" />
+          Instalar
+        </button>
       </div>
     </div>
   );
