@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { UserConfig, calcularIntervaloInicial } from '@/lib/utils/time';
 import { createClient } from '@/lib/supabase/client';
-import { startOfDay } from 'date-fns';
+import { startOfDay, addMinutes } from 'date-fns';
 
 interface User {
   id: string;
@@ -60,13 +60,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ config });
       }
 
-      // Fetch Logs for today
-      const todayStart = startOfDay(new Date()).toISOString();
+      // Fetch Logs for the last 48 hours to cover window crossings
+      const fortyEightHoursAgo = addMinutes(new Date(), -48 * 60).toISOString();
       const { data: logsData } = await supabase
         .from('logs')
         .select('*')
         .eq('user_id', session.user.id)
-        .gte('created_at', todayStart)
+        .gte('created_at', fortyEightHoursAgo)
         .order('created_at', { ascending: true });
 
       set({ logs: (logsData as LogEntry[]) || [] });

@@ -27,14 +27,12 @@ export function getOperationalWindow(config: UserConfig, now: Date = new Date())
     fin = addMinutes(fin, 24 * 60); // Ajustar fin al día siguiente
   }
 
-  // Si 'now' es muy temprano (ej. 01:00 am) y el rango era 09-02, 
-  // 'inicio' será hoy 09am y 'fin' mañana 02am.
-  // Pero 'now' (01:00 am) está dentro del rango operativo que empezó AYER.
-  const finAyer = addMinutes(fin, -24 * 60);
-  if (isBefore(now, inicio) && isBefore(now, finAyer)) {
+  // Si 'now' es antes de 'inicio', técnicamente todavía pertenecemos 
+  // a la jornada operativa que empezó ayer (aunque el periodo de fumar haya terminado).
+  if (isBefore(now, inicio)) {
     return {
       inicio: addMinutes(inicio, -24 * 60),
-      fin: finAyer,
+      fin: addMinutes(fin, -24 * 60),
       isNextDay: true
     };
   }

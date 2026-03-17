@@ -29,8 +29,16 @@ export default function Dashboard() {
     }
   }, [isLoading, user, router]);
 
-  const logsToday = logs.length;
-  const lastLogTimestamp = logs.length > 0 ? logs[logs.length - 1].created_at : null;
+  const { inicio, fin } = config ? getOperationalWindow(config) : { inicio: new Date(), fin: new Date() };
+
+  // Filtrar logs que pertenecen a la jornada operativa actual
+  const logsInWindow = logs.filter(log => {
+    const logDate = new Date(log.created_at);
+    return isAfter(logDate, inicio) && isBefore(logDate, fin);
+  });
+
+  const logsToday = logsInWindow.length;
+  const lastLogTimestamp = logsInWindow.length > 0 ? logsInWindow[logsInWindow.length - 1].created_at : null;
   const isGoalReached = config ? logsToday >= config.meta_diaria : false;
 
   useEffect(() => {
