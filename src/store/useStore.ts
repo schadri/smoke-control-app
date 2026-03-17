@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { UserConfig, calcularIntervaloInicial } from '@/lib/utils/time';
+import { UserConfig, calcularIntervaloInicial, getOperationalWindow } from '@/lib/utils/time';
 import { createClient } from '@/lib/supabase/client';
 import { startOfDay, addMinutes } from 'date-fns';
 
@@ -124,18 +124,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   resetTodayLogs: async () => {
-    const { user } = get();
-    if (!user) return;
+    const { user, config } = get();
+    if (!user || !config) return;
     const supabase = createClient();
-    const todayStart = startOfDay(new Date()).toISOString();
+    
+    // Usar el inicio de la ventana operativa actual en vez de la medianoche calendario
+    const { inicio } = getOperationalWindow(config);
+    const windowStart = inicio.toISOString();
 
     set({ isLoading: true });
     try {
-      await supabase
+      const { error } = await supabase
         .from('logs')
         .delete()
         .eq('user_id', user.id)
-        .gte('created_at', todayStart);
+        .gte('created_at', windowStart);
+      
+      if (error) throw error;
       
       set({ logs: [] });
     } catch (error) {
